@@ -4,14 +4,24 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { Order } from './entities/order.entity';
-import { Repository } from 'typeorm';
+import {
+  EntityManager,
+  EntityTarget,
+  FindOptionsWhere,
+  Repository,
+} from 'typeorm';
 import { OrderProduct } from './entities/order-product.entity';
 import { PersonsService } from 'src/persons/persons.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ProductsService } from 'src/products/products.service';
 import { OrderView } from './entities/order.view';
+import { Person } from 'src/persons/entities/person.entity';
+import { Product } from 'src/products/entities/product.entity';
+
+// Padrão e máximo de pedidos selecionados por SELECT.
+const ORDERS_PER_PAGE = 20;
 
 @Injectable()
 export class OrdersService {
@@ -22,20 +32,14 @@ export class OrdersService {
     @InjectRepository(OrderProduct)
     private readonly orderProductsRepository: Repository<OrderProduct>,
 
-    @InjectRepository(OrderView)
-    private readonly orderViewsRepository: Repository<OrderView>,
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
 
     private readonly personsService: PersonsService,
     private readonly productsService: ProductsService,
   ) {}
 
   async create(creation: CreateOrderDto): Promise<void> {
-    // Cria pedido.
-    let newOrder = new Order();
-    newOrder.orderer = await this.personsService.find({
-      cpf: creation.customerCpf,
-    });
-
     // Verifica quantidade de produtos.
     if (creation.orderProducts.length === 0) {
       throw new BadRequestException({
@@ -43,7 +47,12 @@ export class OrdersService {
       });
     }
 
-    // Salva pedido no banco.
+    // Cria pedido.
+    let newOrder = new Order();
+    newOrder.orderer = await this.personsService.find(Person, {
+      cpf: creation.customerCpf,
+    });
+
     try {
       newOrder = await this.ordersRepository.save(newOrder);
     } catch (error) {
@@ -56,7 +65,7 @@ export class OrdersService {
     // Cria pedidos de produtos.
     let newOrderProducts = new Array<OrderProduct>();
     for (const ordProd of creation.orderProducts) {
-      const prod = await this.productsService.find({
+      const prod = await this.productsService.find(Product, {
         id: ordProd.id,
       });
 
@@ -69,7 +78,6 @@ export class OrdersService {
       newOrderProducts.push(newOrdProd);
     }
 
-    // Salva pedidos de produtos no banco.
     try {
       await this.orderProductsRepository.insert(newOrderProducts);
     } catch (error) {
@@ -80,20 +88,28 @@ export class OrdersService {
     }
   }
 
-  async findViewPage(
+  async findPage<T>(
+    entityClass: EntityTarget<T>,
     page: number,
-    where?: Partial<OrderView>,
-  ): Promise<OrderView[]> {
-    const ORDERS_PER_PAGE = 100;
+    pageSize: number = ORDERS_PER_PAGE,
+    where?: Partial<T>,
+  ): Promise<T[]> {
+    if (pageSize > ORDERS_PER_PAGE) {
+      pageSize = ORDERS_PER_PAGE;
+    }
 
-    let views: OrderView[];
+    let views: T[];
     try {
-      views = await this.orderViewsRepository.find({
-        where,
-        skip: page * ORDERS_PER_PAGE,
-        take: ORDERS_PER_PAGE,
+      views = await this.entityManager.find(entityClass, {
+        where: where as FindOptionsWhere<T>,
+        skip: page * pageSize,
+        take: pageSize,
       });
-    } catch (error) {}
+    } catch (error) {
+      throw new InternalServerErrorException({
+        message: 'Falha ao buscar pedidos.',
+      });
+    }
 
     if (!views || views.length === 0) {
       throw new NotFoundException({

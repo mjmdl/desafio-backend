@@ -3,7 +3,7 @@ import { ProductView } from 'src/products/entities/product.view';
 import { ViewColumn, ViewEntity } from 'typeorm';
 
 @ViewEntity({
-  name: 'order_view',
+  name: 'pedido_view',
   expression: `
 		SELECT
 			ped.id AS id,

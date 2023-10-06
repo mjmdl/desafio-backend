@@ -1,7 +1,9 @@
 import { Order } from 'src/orders/entities/order.entity';
 import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 
-@Entity({ name: 'pessoa', schema: 'public' })
+const ENTITY_NAME = 'pessoa';
+
+@Entity({ name: ENTITY_NAME, schema: 'public' })
 export class Person {
   static readonly NAME_MAX: number = 50;
   static readonly NAME_MIN: number = 3;

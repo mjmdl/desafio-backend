@@ -4,12 +4,21 @@ import {
   Injectable,
   InternalServerErrorException,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import {
+  EntityManager,
+  EntityTarget,
+  FindOptionsWhere,
+  Repository,
+} from 'typeorm';
 import { Person } from './entities/person.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { PersonView } from './entities/person.view';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { CreatePersonDto } from './dto/create-person.dto';
+import { PersonView } from './entities/person.view';
+
+// Padrão e máximo de pessoas selecionadas por SELECT.
+const PERSONS_PER_PAGE = 20;
 
 @Injectable()
 export class PersonsService {
@@ -17,8 +26,8 @@ export class PersonsService {
     @InjectRepository(Person)
     private readonly personsRepository: Repository<Person>,
 
-    @InjectRepository(PersonView)
-    private readonly personViewsRepository: Repository<PersonView>,
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
   ) {}
 
   async create(creation: CreatePersonDto): Promise<void> {
@@ -42,7 +51,7 @@ export class PersonsService {
     }
   }
 
-  async exist(where: Partial<Person>): Promise<boolean> {
+  async exist(where: FindOptionsWhere<Person>): Promise<boolean> {
     try {
       return await this.personsRepository.exist({ where });
     } catch (error) {
@@ -53,14 +62,17 @@ export class PersonsService {
     }
   }
 
-  async find(where: Partial<Person>): Promise<Person> {
-    let person: Person;
+  async requireAdmin(where: Partial<PersonView>): Promise<void> {
+    let person;
     try {
-      person = await this.personsRepository.findOneBy(where);
+      person = await this.personsRepository.findOne({
+        select: { admin: true },
+        where,
+      });
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException({
-        message: 'Falha ao buscar pessoas.',
+        message: 'Falha ao buscar.',
       });
     }
 
@@ -70,13 +82,53 @@ export class PersonsService {
       });
     }
 
-    return person;
+    console.log(person);
+    if (!person.admin) {
+      throw new UnauthorizedException({
+        message: 'Lhe faltam privilégios.',
+      });
+    }
   }
 
-  async findView(where: Partial<PersonView>): Promise<PersonView> {
-    let view: PersonView;
+  async find<T>(entityClass: EntityTarget<T>, where: Partial<T>): Promise<T> {
+    let entity: T;
     try {
-      view = await this.personViewsRepository.findOneBy(where);
+      entity = await this.entityManager.findOne(entityClass, {
+        where: where as FindOptionsWhere<T>,
+      });
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException({
+        message: 'Falha ao buscar pessoa.',
+      });
+    }
+
+    if (!entity) {
+      throw new NotFoundException({
+        message: 'Pessoa não encontrada.',
+      });
+    }
+
+    return entity;
+  }
+
+  async findPage<T>(
+    entityClass: EntityTarget<T>,
+    page: number = 0,
+    pageSize: number = PERSONS_PER_PAGE,
+    where?: Partial<T>,
+  ): Promise<T[]> {
+    if (pageSize > PERSONS_PER_PAGE) {
+      pageSize = PERSONS_PER_PAGE;
+    }
+
+    let entities: T[];
+    try {
+      entities = await this.entityManager.find(entityClass, {
+        where: where as FindOptionsWhere<T>,
+        skip: page * pageSize,
+        take: pageSize,
+      });
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException({
@@ -84,40 +136,12 @@ export class PersonsService {
       });
     }
 
-    if (!view) {
+    if (!entities || entities.length === 0) {
       throw new NotFoundException({
-        message: 'Pessoa não encontrada.',
+        message: 'Pessoas não encontradas.',
       });
     }
 
-    return view;
-  }
-
-  async findViewPage(
-    page: number = 0,
-    where?: Partial<PersonView>,
-  ): Promise<PersonView[]> {
-    const PERSONS_PER_PAGE = 100;
-
-    let views: PersonView[];
-    try {
-      views = await this.personViewsRepository.find({
-        where,
-        skip: page * PERSONS_PER_PAGE,
-        take: PERSONS_PER_PAGE,
-      });
-    } catch (error) {
-      throw new InternalServerErrorException({
-        message: 'Falha ao buscar pessoas.',
-      });
-    }
-
-    if (!views || views.length === 0) {
-      throw new NotFoundException({
-        message: 'Nenhuma pessoa encontrada.',
-      });
-    }
-
-    return views;
+    return entities;
   }
 }

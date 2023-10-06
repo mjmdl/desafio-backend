@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Param, Post } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { OrderView } from './entities/order.view';
 
 @Controller('pedidos')
 export class OrdersController {
@@ -13,11 +14,22 @@ export class OrdersController {
 
   @Get()
   async getFirstPage(): Promise<object> {
-    return { orders: await this.ordersService.findViewPage(0) };
+    return { orders: await this.ordersService.findPage(OrderView, 0) };
   }
 
   @Get('/pagina=:page')
   async getPage(@Param('page') page: number): Promise<object> {
-    return { orders: await this.ordersService.findViewPage(page) };
+    return { orders: await this.ordersService.findPage(OrderView, page) };
+  }
+
+  @Get('/pagina=:page/itens=:items')
+  async getPageItems(@Param() params: any): Promise<object> {
+    return {
+      orders: await this.ordersService.findPage(
+        OrderView,
+        params['page'],
+        params['items'],
+      ),
+    };
   }
 }

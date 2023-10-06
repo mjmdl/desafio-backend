@@ -3,11 +3,19 @@ import {
   InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import {
+  EntityManager,
+  EntityTarget,
+  FindOptionsWhere,
+  Repository,
+} from 'typeorm';
 import { Product } from './entities/product.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ProductView } from './entities/product.view';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+
+// Padrão e máximo de produtos selecionados por SELECT.
+const PRODUCTS_PER_PAGE = 20;
 
 @Injectable()
 export class ProductsService {
@@ -15,8 +23,8 @@ export class ProductsService {
     @InjectRepository(Product)
     private readonly productsRepository: Repository<Product>,
 
-    @InjectRepository(ProductView)
-    private readonly productViewsRepository: Repository<ProductView>,
+    @InjectEntityManager()
+    private readonly entityManager: EntityManager,
   ) {}
 
   async create(creation: CreateProductDto): Promise<void> {
@@ -30,11 +38,14 @@ export class ProductsService {
     }
   }
 
-  async find(where: Partial<Product>): Promise<Product> {
-    let product: Product;
+  async find<T>(entityClass: EntityTarget<T>, where: Partial<T>): Promise<T> {
+    let product: T;
 
     try {
-      product = await this.productsRepository.findOneBy(where);
+      product = await this.entityManager.findOneBy(
+        entityClass,
+        where as FindOptionsWhere<T>,
+      );
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException({
@@ -49,18 +60,22 @@ export class ProductsService {
     return product;
   }
 
-  async viewPage(
+  async findPage<T>(
+    entityClass: EntityTarget<T>,
     page: number,
-    where?: Partial<ProductView>,
-  ): Promise<ProductView[]> {
-    const PRODUCTS_PER_PAGE = 100;
+    pageSize: number = PRODUCTS_PER_PAGE,
+    where?: Partial<T>,
+  ): Promise<T[]> {
+    if (pageSize > PRODUCTS_PER_PAGE) {
+      pageSize = PRODUCTS_PER_PAGE;
+    }
 
-    let views: ProductView[];
+    let views: T[];
     try {
-      views = await this.productViewsRepository.find({
-        where,
-        skip: page * PRODUCTS_PER_PAGE,
-        take: PRODUCTS_PER_PAGE,
+      views = await this.entityManager.find(entityClass, {
+        where: where as FindOptionsWhere<T>,
+        skip: page * pageSize,
+        take: pageSize,
       });
     } catch (error) {
       console.error(error);
@@ -74,5 +89,19 @@ export class ProductsService {
     }
 
     return views;
+  }
+
+  async update(updation: UpdateProductDto): Promise<void> {
+    try {
+      await this.productsRepository.update(
+        { id: updation.id },
+        updation.product,
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException({
+        message: 'Falha ao atualizar produto.',
+      });
+    }
   }
 }

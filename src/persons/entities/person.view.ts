@@ -1,14 +1,16 @@
 import { ViewColumn, ViewEntity } from 'typeorm';
 
+const VIEW_NAME = 'pessoa_view';
+
 @ViewEntity({
-  name: 'pessoa_view',
+  name: VIEW_NAME,
   expression: `
 		SELECT
-			pessoa.nome AS nome,
-			pessoa.cpf AS cpf,
-			pessoa.admin AS admin
+			p.nome AS nome,
+			p.cpf AS cpf,
+			p.admin AS admin
 		FROM
-			public.pessoa AS pessoa
+			public.pessoa AS p
 	`,
 })
 export class PersonView {

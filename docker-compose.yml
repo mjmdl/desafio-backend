@@ -1,0 +1,15 @@
+version: '3'
+
+services:
+  database:
+    container_name: challenge-database
+    image: postgres:latest
+    restart: no
+    ports:
+      - ${PG_PORT}:5432
+    volumes:
+      - ${PG_VOLUME}
+    environment:
+      POSTGRES_USER: ${PG_USER}
+      POSTGRES_PASSWORD: ${PG_PASSWORD}
+      POSTGRES_DB: ${PG_DATABASE}

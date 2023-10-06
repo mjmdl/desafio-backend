@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -29,11 +30,20 @@ export class OrdersService {
   ) {}
 
   async create(creation: CreateOrderDto): Promise<void> {
+    // Cria pedido.
     let newOrder = new Order();
     newOrder.orderer = await this.personsService.find({
       cpf: creation.customerCpf,
     });
 
+    // Verifica quantidade de produtos.
+    if (creation.orderProducts.length === 0) {
+      throw new BadRequestException({
+        message: 'Ao menos um produto é necessário para abrir o pedido.',
+      });
+    }
+
+    // Salva pedido no banco.
     try {
       newOrder = await this.ordersRepository.save(newOrder);
     } catch (error) {
@@ -43,19 +53,23 @@ export class OrdersService {
       });
     }
 
+    // Cria pedidos de produtos.
     let newOrderProducts = new Array<OrderProduct>();
-    for (const orderProduct of creation.orderProducts) {
-      const product = await this.productsService.find({ id: orderProduct.id });
-      const newOrderProduct = new OrderProduct();
+    for (const ordProd of creation.orderProducts) {
+      const prod = await this.productsService.find({
+        id: ordProd.id,
+      });
 
-      newOrderProduct.product = product;
-      newOrderProduct.order = newOrder;
-      newOrderProduct.quantity = orderProduct.quantity;
-      newOrderProduct.totalValue = orderProduct.quantity * product.value;
+      const newOrdProd = new OrderProduct();
+      newOrdProd.product = prod;
+      newOrdProd.order = newOrder;
+      newOrdProd.quantity = ordProd.quantity;
+      newOrdProd.totalValue = ordProd.quantity * prod.value;
 
-      newOrderProducts.push(newOrderProduct);
+      newOrderProducts.push(newOrdProd);
     }
 
+    // Salva pedidos de produtos no banco.
     try {
       await this.orderProductsRepository.insert(newOrderProducts);
     } catch (error) {

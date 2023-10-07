@@ -7,16 +7,17 @@ import { ViewColumn, ViewEntity } from 'typeorm';
   expression: `
 		SELECT
 			ped.id AS id,
+			SUM(pedprod.valor_total) AS valor_total,
 			JSON_BUILD_OBJECT(
 				'cpf', cli.cpf,
-				'nome', cli.nome
+				'name', cli.nome
 			) AS cliente,
 			JSON_AGG(JSON_BUILD_OBJECT(
 				'id', prod.id,
-				'nome', prod.nome,
-				'valor', prod.valor,
-				'quantidade', pedprod.quantidade,
-				'valor_total', pedprod.valor_total
+				'name', prod.nome,
+				'value', prod.valor,
+				'quantity', pedprod.quantidade,
+				'totalValue', pedprod.valor_total
 			)) AS produtos
 		FROM
 			pedidos_produtos AS pedprod
@@ -34,8 +35,11 @@ export class OrderView {
   @ViewColumn()
   id: number;
 
+  @ViewColumn({ name: 'valor_total' })
+  totalValue: number;
+
   @ViewColumn({ name: 'cliente' })
-  cliente: PersonView;
+  client: PersonView;
 
   @ViewColumn({ name: 'produtos' })
   products: ProductView[];

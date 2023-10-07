@@ -16,6 +16,7 @@ import { Person } from './entities/person.entity';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { PersonView } from './entities/person.view';
+import { UpdatePersonDto } from './dto/update-person.dto';
 
 // Padrão e máximo de pessoas selecionadas por SELECT.
 const PERSONS_PER_PAGE = 20;
@@ -82,7 +83,6 @@ export class PersonsService {
       });
     }
 
-    console.log(person);
     if (!person.admin) {
       throw new UnauthorizedException({
         message: 'Lhe faltam privilégios.',
@@ -114,7 +114,7 @@ export class PersonsService {
 
   async findPage<T>(
     entityClass: EntityTarget<T>,
-    page: number = 0,
+    pageNumber: number = 0,
     pageSize: number = PERSONS_PER_PAGE,
     where?: Partial<T>,
   ): Promise<T[]> {
@@ -126,7 +126,7 @@ export class PersonsService {
     try {
       entities = await this.entityManager.find(entityClass, {
         where: where as FindOptionsWhere<T>,
-        skip: page * pageSize,
+        skip: pageNumber * pageSize,
         take: pageSize,
       });
     } catch (error) {
@@ -143,5 +143,27 @@ export class PersonsService {
     }
 
     return entities;
+  }
+
+  async update(updation: UpdatePersonDto): Promise<void> {
+    console.log(updation);
+
+    if (Object.entries(updation.updatedPerson).length === 0) {
+      throw new BadRequestException({
+        message: 'Ao menos um campo deve ser atualizado.',
+      });
+    }
+
+    try {
+      await this.personsRepository.update(
+        { cpf: updation.targetCpf },
+        updation.updatedPerson,
+      );
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException({
+        message: 'Falha ao atualizar pessoa.',
+      });
+    }
   }
 }

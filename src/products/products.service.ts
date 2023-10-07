@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -92,15 +93,32 @@ export class ProductsService {
   }
 
   async update(updation: UpdateProductDto): Promise<void> {
+    if (Object.entries(updation.updatedProduct).length === 0) {
+      throw new BadRequestException({
+        message: 'É necessário atualizar ao menos um campo.',
+      });
+    }
+
     try {
       await this.productsRepository.update(
         { id: updation.id },
-        updation.product,
+        updation.updatedProduct,
       );
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException({
         message: 'Falha ao atualizar produto.',
+      });
+    }
+  }
+
+  async delete(id: number) {
+    try {
+      await this.productsRepository.delete({ id });
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException({
+        message: 'Falha ao deletar produto.',
       });
     }
   }

@@ -6,12 +6,10 @@ import {
   Param,
   Post,
   Put,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { PersonsService } from 'src/persons/persons.service';
 import { CreateProductDto } from './dto/create-product.dto';
-import { PersonView } from 'src/persons/entities/person.view';
 import { ProductView } from './entities/product.view';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { DeleteProductDto } from './dto/delete-product.dto';
@@ -24,40 +22,47 @@ export class ProductsController {
   ) {}
 
   @Post()
-  async post(@Body() creation: CreateProductDto): Promise<void> {
+  async create(@Body() creation: CreateProductDto): Promise<void> {
     await this.personsService.requireAdmin({ cpf: creation.creatorCpf });
+
     await this.productsService.create(creation);
   }
 
   @Get('/id=:id')
-  async getId(@Param('id') id: number): Promise<object> {
-    return { product: await this.productsService.find(ProductView, { id }) };
+  async findId(@Param('id') id: number): Promise<object> {
+    const product = await this.productsService.find(ProductView, { id });
+    return { product };
   }
 
   @Get()
-  async getFirstPage(): Promise<object> {
-    return { products: await this.productsService.findPage(ProductView, 0) };
+  async findFirstPage(): Promise<object> {
+    const products = await this.productsService.findPage(ProductView, 0);
+    return { products };
   }
 
   @Get('/pagina=:page')
-  async getPage(@Param('page') page: number): Promise<object> {
-    return { products: await this.productsService.findPage(ProductView, page) };
+  async findPage(@Param('page') page: number): Promise<object> {
+    const products = await this.productsService.findPage(ProductView, page);
+    return { products };
   }
 
   @Get('/pagina=:page/itens=:items')
-  async getPageItems(@Param() params: any): Promise<object> {
-    return {
-      products: await this.productsService.findPage(
-        ProductView,
-        params['page'],
-        params['items'],
-      ),
-    };
+  async findPageItems(
+    @Param('page') page: number,
+    @Param('items') items: number,
+  ): Promise<object> {
+    const products = await this.productsService.findPage(
+      ProductView,
+      page,
+      items,
+    );
+    return { products };
   }
 
   @Put()
-  async put(@Body() updation: UpdateProductDto): Promise<void> {
+  async update(@Body() updation: UpdateProductDto): Promise<void> {
     await this.personsService.requireAdmin({ cpf: updation.updatorCpf });
+
     await this.productsService.update(updation);
   }
 
@@ -67,6 +72,6 @@ export class ProductsController {
       cpf: deletion.deletorCpf,
     });
 
-    // await this.productsService.delete(deletion.productId);
+    await this.productsService.delete(deletion.productId);
   }
 }

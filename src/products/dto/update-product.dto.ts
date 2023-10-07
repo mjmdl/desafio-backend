@@ -29,5 +29,5 @@ export class UpdateProductDto {
   @IsNotEmpty()
   @ValidateNested()
   @Type(() => PutProductDto)
-  product: PutProductDto;
+  updatedProduct: PutProductDto;
 }

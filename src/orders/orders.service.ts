@@ -16,7 +16,6 @@ import { OrderProduct } from './entities/order-product.entity';
 import { PersonsService } from 'src/persons/persons.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { ProductsService } from 'src/products/products.service';
-import { OrderView } from './entities/order.view';
 import { Person } from 'src/persons/entities/person.entity';
 import { Product } from 'src/products/entities/product.entity';
 
@@ -63,60 +62,127 @@ export class OrdersService {
     }
 
     // Cria pedidos de produtos.
-    let newOrderProducts = new Array<OrderProduct>();
-    for (const ordProd of creation.orderProducts) {
-      const prod = await this.productsService.find(Product, {
-        id: ordProd.id,
-      });
-
-      const newOrdProd = new OrderProduct();
-      newOrdProd.product = prod;
-      newOrdProd.order = newOrder;
-      newOrdProd.quantity = ordProd.quantity;
-      newOrdProd.totalValue = ordProd.quantity * prod.value;
-
-      newOrderProducts.push(newOrdProd);
-    }
-
     try {
+      let newOrderProducts = new Array<OrderProduct>();
+      for (const ordProd of creation.orderProducts) {
+        const prod = await this.productsService.find(Product, {
+          id: ordProd.id,
+        });
+
+        const newOrdProd = new OrderProduct();
+        newOrdProd.product = prod;
+        newOrdProd.order = newOrder;
+        newOrdProd.quantity = ordProd.quantity;
+        newOrdProd.totalValue = ordProd.quantity * prod.value;
+
+        newOrderProducts.push(newOrdProd);
+      }
+
       await this.orderProductsRepository.insert(newOrderProducts);
     } catch (error) {
       console.error(error);
-      throw new InternalServerErrorException({
-        message: 'Falha ao associar produto ao pedido.',
-      });
+
+      try {
+        await this.ordersRepository.delete({ id: newOrder.id });
+      } catch (error) {
+        console.error(error);
+      }
+
+      if (error instanceof NotFoundException) {
+        throw error;
+      } else {
+        throw new InternalServerErrorException({
+          message: 'Falha ao criar pedido.',
+        });
+      }
     }
   }
 
-  async findPage<T>(
+  async findPageOfPerson<T>(
     entityClass: EntityTarget<T>,
-    page: number,
-    pageSize: number = ORDERS_PER_PAGE,
-    where?: Partial<T>,
-  ): Promise<T[]> {
-    if (pageSize > ORDERS_PER_PAGE) {
+    personCpf: string,
+    pageNumber: number,
+    pageSize: number,
+  ): Promise<T> {
+    if (pageSize > ORDERS_PER_PAGE || pageSize < 1) {
       pageSize = ORDERS_PER_PAGE;
     }
 
-    let views: T[];
+    let entities: T;
     try {
-      views = await this.entityManager.find(entityClass, {
-        where: where as FindOptionsWhere<T>,
-        skip: page * pageSize,
-        take: pageSize,
-      });
+      const { tableName } =
+        this.entityManager.getRepository(entityClass).metadata;
+
+      // Selecionar todos os pedidos de uma pessoa.
+      // 1. Encontrar ID do pedido usando CPF
+      // 2. Encontrar pedido pelo ID
+      entities = await this.entityManager.query(`
+        SELECT
+          *
+        FROM
+          ${tableName} AS target
+        WHERE
+          target.id IN (
+            SELECT
+              pedido.id
+            FROM
+              pedido
+            INNER JOIN
+              pessoa ON pessoa.cpf = CAST(${personCpf} AS VARCHAR)
+            WHERE
+              pedido.id_pessoa = pessoa.id
+          )
+        OFFSET
+          ${pageNumber * pageSize}
+        LIMIT
+          ${pageSize}
+      `);
     } catch (error) {
+      console.error(error);
       throw new InternalServerErrorException({
-        message: 'Falha ao buscar pedidos.',
+        message: 'Falha ao buscar pedidos de pessoa.',
       });
     }
 
-    if (!views || views.length === 0) {
+    if (!entities) {
       throw new NotFoundException({
         message: 'Nenhum pedido encontrado.',
       });
     }
 
-    return views;
+    return entities;
+  }
+
+  async findPage<T>(
+    entityClass: EntityTarget<T>,
+    pageNumber: number,
+    pageSize: number = ORDERS_PER_PAGE,
+    where?: Partial<T>,
+  ): Promise<T[]> {
+    if (pageSize > ORDERS_PER_PAGE || pageSize < 1) {
+      pageSize = ORDERS_PER_PAGE;
+    }
+
+    let entities: T[];
+    try {
+      entities = await this.entityManager.find(entityClass, {
+        where: where as FindOptionsWhere<T>,
+        skip: pageNumber * pageSize,
+        take: pageSize,
+      });
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException({
+        message: 'Falha ao buscar pedidos.',
+      });
+    }
+
+    if (!entities || entities.length === 0) {
+      throw new NotFoundException({
+        message: 'Nenhum pedido encontrado.',
+      });
+    }
+
+    return entities;
   }
 }

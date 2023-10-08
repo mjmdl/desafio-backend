@@ -28,33 +28,21 @@ export class ProductsController {
     await this.productsService.create(creation);
   }
 
-  @Get('/id=:id')
+  @Get('id=:id')
   async findId(@Param('id') id: number): Promise<object> {
     const product = await this.productsService.find(ProductView, { id });
     return { product };
   }
 
-  @Get()
-  async findFirstPage(): Promise<object> {
-    const products = await this.productsService.findPage(ProductView, 0);
-    return { products };
-  }
-
-  @Get('/pagina=:page')
-  async findPage(@Param('page') page: number): Promise<object> {
-    const products = await this.productsService.findPage(ProductView, page);
-    return { products };
-  }
-
-  @Get('/pagina=:page/itens=:items')
+  @Get(['pagina=:page/itens=:items', 'pagina=:page', 'pagina'])
   async findPageItems(
     @Param('page') page: number,
     @Param('items') items: number,
   ): Promise<object> {
     const products = await this.productsService.findPage(
       ProductView,
-      page,
-      items,
+      page ?? 0,
+      items ?? 0,
     );
     return { products };
   }

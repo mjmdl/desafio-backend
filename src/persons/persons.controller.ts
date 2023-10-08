@@ -5,7 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   Param,
-  Patch,
   Post,
   Put,
 } from '@nestjs/common';
@@ -30,25 +29,7 @@ export class PersonsController {
     return { person };
   }
 
-  @Post('lista')
-  @HttpCode(HttpStatus.OK)
-  async findFirstPage(@Body() auth: AuthPersonDto): Promise<object> {
-    await this.personsService.requireAdmin({ cpf: auth.cpf });
-
-    const products = await this.personsService.findPage(PersonView, 0);
-    return { products };
-  }
-
-  @Post('lista/pagina=:page')
-  @HttpCode(HttpStatus.OK)
-  async findPage(@Param('page') page: number, @Body() auth: AuthPersonDto) {
-    await this.personsService.requireAdmin({ cpf: auth.cpf });
-
-    const persons = await this.personsService.findPage(PersonView, page);
-    return { persons };
-  }
-
-  @Post('lista/pagina=:page/itens=:items')
+  @Post(['pagina=:page/itens=:items', 'pagina=:page', '/pagina'])
   @HttpCode(HttpStatus.OK)
   async findPageItems(
     @Param('page') page: number,
@@ -57,7 +38,11 @@ export class PersonsController {
   ) {
     await this.personsService.requireAdmin({ cpf: auth.cpf });
 
-    const persons = await this.personsService.findPage(PersonView, page, items);
+    const persons = await this.personsService.findPage(
+      PersonView,
+      page ?? 0,
+      items ?? 0,
+    );
     return { persons };
   }
 

@@ -113,9 +113,6 @@ export class OrdersService {
       const { tableName } =
         this.entityManager.getRepository(entityClass).metadata;
 
-      // Selecionar todos os pedidos de uma pessoa.
-      // 1. Encontrar ID do pedido usando CPF
-      // 2. Encontrar pedido pelo ID
       entities = await this.entityManager.query(`
         SELECT
           *

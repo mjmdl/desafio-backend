@@ -4,6 +4,7 @@ import { ViewColumn, ViewEntity } from 'typeorm';
   name: 'produto_ao_usuario_view',
   expression: `
 		SELECT
+			id,
 			nome,
 			valor,
 			favorito,
@@ -17,6 +18,9 @@ import { ViewColumn, ViewEntity } from 'typeorm';
 	`,
 })
 export class ProductToUserView {
+  @ViewColumn()
+  id: number;
+
   @ViewColumn({ name: 'nome' })
   name: string;
 

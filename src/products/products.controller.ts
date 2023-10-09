@@ -3,8 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpCode,
-  HttpStatus,
   InternalServerErrorException,
   NotFoundException,
   Post,
@@ -18,7 +16,6 @@ import { ProductView } from './entities/product.view';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { DeleteProductDto } from './dto/delete-product.dto';
 import { ProductToUserView } from './entities/product-to-user.view';
-import { AuthPersonDto } from 'src/persons/dto/auth-person.dto';
 
 @Controller('produtos')
 export class ProductsController {
@@ -28,10 +25,11 @@ export class ProductsController {
   ) {}
 
   @Post()
-  async create(@Body() creation: CreateProductDto): Promise<void> {
+  async create(@Body() creation: CreateProductDto): Promise<object> {
     await this.personsService.requireAdmin({ cpf: creation.creatorCpf });
 
-    await this.productsService.create(creation);
+    const id = await this.productsService.create(creation);
+    return { id };
   }
 
   @Get()
@@ -47,23 +45,6 @@ export class ProductsController {
   ): Promise<object> {
     const products = await this.productsService.findPage(
       ProductToUserView,
-      page,
-      items,
-    );
-    return { products };
-  }
-
-  @Post('lista/admin')
-  @HttpCode(HttpStatus.OK)
-  async findPageItemsAdmin(
-    @Query('page') page: number = 0,
-    @Query('items') items: number = 0,
-    @Body() auth: AuthPersonDto,
-  ) {
-    await this.personsService.requireAdmin({ cpf: auth.cpf });
-
-    const products = await this.productsService.findPage(
-      ProductView,
       page,
       items,
     );

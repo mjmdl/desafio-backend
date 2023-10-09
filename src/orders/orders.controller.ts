@@ -12,7 +12,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderView } from './entities/order.view';
 import { AuthPersonDto } from 'src/persons/dto/auth-person.dto';
 import { PersonsService } from 'src/persons/persons.service';
-import { PersonOrderView } from './entities/person.order.view';
+import { PersonOrderView } from './entities/person-order.view';
 
 @Controller('pedidos')
 export class OrdersController {
@@ -22,8 +22,9 @@ export class OrdersController {
   ) {}
 
   @Post()
-  async create(@Body() creation: CreateOrderDto): Promise<void> {
-    await this.ordersService.create(creation);
+  async create(@Body() creation: CreateOrderDto): Promise<object> {
+    const id = await this.ordersService.create(creation);
+    return { id };
   }
 
   @Post('id=:id')

@@ -7,6 +7,7 @@ import {
 } from 'class-validator';
 import { Person } from '../entities/person.entity';
 import { IsLength } from 'src/commons/is-length.validator';
+import { IsCpf } from 'src/commons/is-cpf.validator';
 
 export class CreatePersonDto {
   @IsNotEmpty()
@@ -17,6 +18,7 @@ export class CreatePersonDto {
   @IsNotEmpty()
   @IsString()
   @IsLength(Person.CPF_LEN)
+  @IsCpf()
   cpf: string;
 
   @IsOptional()

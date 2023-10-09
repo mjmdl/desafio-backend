@@ -18,7 +18,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { ProductsService } from 'src/products/products.service';
 import { Person } from 'src/persons/entities/person.entity';
 import { Product } from 'src/products/entities/product.entity';
-import { PersonOrderView } from './entities/person.order.view';
+import { PersonOrderView } from './entities/person-order.view';
 
 // Padrão e máximo de pedidos selecionados por SELECT.
 const ORDERS_PER_PAGE = 20;
@@ -42,7 +42,7 @@ export class OrdersService {
     private readonly productsService: ProductsService,
   ) {}
 
-  async create(creation: CreateOrderDto): Promise<void> {
+  async create(creation: CreateOrderDto): Promise<number> {
     // Verifica quantidade de produtos.
     if (creation.products.length === 0) {
       throw new BadRequestException({
@@ -100,6 +100,8 @@ export class OrdersService {
         });
       }
     }
+
+    return newOrder.id;
   }
 
   async find<T>(
@@ -121,6 +123,7 @@ export class OrdersService {
     if (!entity) {
       throw new NotFoundException({
         message: 'Pedido não encontrado.',
+        filters: where,
       });
     }
 
@@ -154,6 +157,7 @@ export class OrdersService {
     if (!entities || entities.length === 0) {
       throw new NotFoundException({
         message: 'Nenhum pedido encontrado.',
+        filters: where,
       });
     }
 
@@ -183,7 +187,7 @@ export class OrdersService {
       });
     }
 
-    if (!personOrders) {
+    if (!personOrders || personOrders.length === 0) {
       throw new NotFoundException({
         message: 'Nenhum pedido encontrado.',
       });

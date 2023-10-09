@@ -10,6 +10,7 @@ import {
 import { Product } from '../entities/product.entity';
 import { IsLength } from 'src/commons/is-length.validator';
 import { Person } from 'src/persons/entities/person.entity';
+import { IsCpf } from 'src/commons/is-cpf.validator';
 
 export class CreateProductDto {
   @IsNotEmpty()
@@ -33,5 +34,6 @@ export class CreateProductDto {
   @IsNotEmpty()
   @IsString()
   @IsLength(Person.CPF_LEN)
+  @IsCpf()
   creatorCpf: string;
 }

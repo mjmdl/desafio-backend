@@ -80,12 +80,13 @@ export class PersonsService {
     if (!person) {
       throw new NotFoundException({
         message: 'Pessoa não encontrada.',
+        filters: where,
       });
     }
 
     if (!person.admin) {
       throw new UnauthorizedException({
-        message: 'Lhe faltam privilégios.',
+        message: 'Lhe faltam privilégios de administrador.',
       });
     }
   }
@@ -149,6 +150,14 @@ export class PersonsService {
     if (Object.entries(updation.update).length === 0) {
       throw new BadRequestException({
         message: 'Ao menos um campo deve ser atualizado.',
+      });
+    }
+
+    const targetExist = await this.exist({ cpf: updation.targetCpf });
+    if (!targetExist) {
+      throw new NotFoundException({
+        message: 'Pessoa não encontrada.',
+        filters: { cpf: updation.targetCpf },
       });
     }
 

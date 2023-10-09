@@ -28,9 +28,10 @@ export class ProductsService {
     private readonly entityManager: EntityManager,
   ) {}
 
-  async create(creation: CreateProductDto): Promise<void> {
+  async create(creation: CreateProductDto): Promise<number> {
     try {
-      await this.productsRepository.insert(creation);
+      const result = await this.productsRepository.insert(creation);
+      return result.identifiers[0].id;
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException({
@@ -66,7 +67,10 @@ export class ProductsService {
     }
 
     if (!product) {
-      throw new NotFoundException('Produto não encontrado.');
+      throw new NotFoundException({
+        message: 'Produto não encontrado.',
+        filters: where,
+      });
     }
 
     return product;
@@ -97,7 +101,10 @@ export class ProductsService {
     }
 
     if (!views || views.length === 0) {
-      throw new NotFoundException('Produtos não encontrados.');
+      throw new NotFoundException({
+        message: 'Produtos não encontrados.',
+        filters: where,
+      });
     }
 
     return views;

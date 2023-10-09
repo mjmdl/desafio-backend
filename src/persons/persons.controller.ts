@@ -14,7 +14,7 @@ import { CreatePersonDto } from './dto/create-person.dto';
 import { PersonView } from './entities/person.view';
 import { AuthPersonDto } from './dto/auth-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
-import { Person } from './entities/person.entity';
+import { isCpf } from 'src/commons/is-cpf.validator';
 
 @Controller('pessoas')
 export class PersonsController {
@@ -27,9 +27,9 @@ export class PersonsController {
 
   @Get()
   async findCpf(@Query('cpf') cpf: string = '') {
-    if (cpf.length !== Person.CPF_LEN) {
+    if (!isCpf(cpf)) {
       throw new BadRequestException({
-        message: `CPF deve ter ${Person.CPF_LEN} dígitos`,
+        message: `CPF inválido.`,
       });
     }
 

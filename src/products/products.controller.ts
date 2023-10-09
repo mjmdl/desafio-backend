@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   Post,
   Put,
@@ -54,6 +56,7 @@ export class ProductsController {
     'pagina=:page/admin',
     'pagina/admin',
   ])
+  @HttpCode(HttpStatus.OK)
   async findPageItemsAdmin(
     @Param('page') page: number,
     @Param('items') items: number,

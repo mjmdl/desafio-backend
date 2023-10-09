@@ -102,88 +102,29 @@ export class OrdersService {
     }
   }
 
-  async findPersonPage(
-    personCpf: string,
-    pageNumber: number,
-    pageSize: number,
-  ): Promise<PersonOrderView[]> {
-    if (pageSize > ORDERS_PER_PAGE || pageSize < 1) {
-      pageSize = ORDERS_PER_PAGE;
-    }
-
-    let personOrders: PersonOrderView[];
-    try {
-      personOrders = await this.personOrderViewsRepository.find({
-        where: { cpf: personCpf },
-        skip: pageNumber * pageSize,
-        take: pageSize,
-      });
-    } catch (error) {
-      console.error(error);
-      throw new InternalServerErrorException({
-        message: 'Falha ao buscar pedidos.',
-      });
-    }
-
-    if (!personOrders) {
-      throw new NotFoundException({
-        message: 'Nenhum pedido encontrado.',
-      });
-    }
-
-    return personOrders;
-  }
-
-  async findPageOfPerson<T>(
+  async find<T>(
     entityClass: EntityTarget<T>,
-    personCpf: string,
-    pageNumber: number,
-    pageSize: number,
+    where?: FindOptionsWhere<T>,
   ): Promise<T> {
-    if (pageSize > ORDERS_PER_PAGE || pageSize < 1) {
-      pageSize = ORDERS_PER_PAGE;
-    }
-
-    let entities: T;
+    let entity: T;
     try {
-      const { tableName } =
-        this.entityManager.getRepository(entityClass).metadata;
-
-      entities = await this.entityManager.query(`
-        SELECT
-          *
-        FROM
-          ${tableName} AS target
-        WHERE
-          target.id IN (
-            SELECT
-              pedido.id
-            FROM
-              pedido
-            INNER JOIN
-              pessoa ON pessoa.cpf = CAST(${personCpf} AS VARCHAR)
-            WHERE
-              pedido.id_pessoa = pessoa.id
-          )
-        OFFSET
-          ${pageNumber * pageSize}
-        LIMIT
-          ${pageSize}
-      `);
+      entity = await this.entityManager.findOne(entityClass, {
+        where,
+      });
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException({
-        message: 'Falha ao buscar pedidos de pessoa.',
+        message: 'Falha ao buscar pedido.',
       });
     }
 
-    if (!entities) {
+    if (!entity) {
       throw new NotFoundException({
-        message: 'Nenhum pedido encontrado.',
+        message: 'Pedido não encontrado.',
       });
     }
 
-    return entities;
+    return entity;
   }
 
   async findPage<T>(
@@ -217,5 +158,37 @@ export class OrdersService {
     }
 
     return entities;
+  }
+
+  async findPersonPage(
+    personCpf: string,
+    pageNumber: number,
+    pageSize: number,
+  ): Promise<PersonOrderView[]> {
+    if (pageSize > ORDERS_PER_PAGE || pageSize < 1) {
+      pageSize = ORDERS_PER_PAGE;
+    }
+
+    let personOrders: PersonOrderView[];
+    try {
+      personOrders = await this.personOrderViewsRepository.find({
+        where: { cpf: personCpf },
+        skip: pageNumber * pageSize,
+        take: pageSize,
+      });
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException({
+        message: 'Falha ao buscar pedidos.',
+      });
+    }
+
+    if (!personOrders) {
+      throw new NotFoundException({
+        message: 'Nenhum pedido encontrado.',
+      });
+    }
+
+    return personOrders;
   }
 }

@@ -18,6 +18,7 @@ import { CreateOrderDto } from './dto/create-order.dto';
 import { ProductsService } from 'src/products/products.service';
 import { Person } from 'src/persons/entities/person.entity';
 import { Product } from 'src/products/entities/product.entity';
+import { PersonOrderView } from './entities/person.order.view';
 
 // Padrão e máximo de pedidos selecionados por SELECT.
 const ORDERS_PER_PAGE = 20;
@@ -30,6 +31,9 @@ export class OrdersService {
 
     @InjectRepository(OrderProduct)
     private readonly orderProductsRepository: Repository<OrderProduct>,
+
+    @InjectRepository(PersonOrderView)
+    private readonly personOrderViewsRepository: Repository<PersonOrderView>,
 
     @InjectEntityManager()
     private readonly entityManager: EntityManager,
@@ -96,6 +100,38 @@ export class OrdersService {
         });
       }
     }
+  }
+
+  async findPersonPage(
+    personCpf: string,
+    pageNumber: number,
+    pageSize: number,
+  ): Promise<PersonOrderView[]> {
+    if (pageSize > ORDERS_PER_PAGE || pageSize < 1) {
+      pageSize = ORDERS_PER_PAGE;
+    }
+
+    let personOrders: PersonOrderView[];
+    try {
+      personOrders = await this.personOrderViewsRepository.find({
+        where: { cpf: personCpf },
+        skip: pageNumber * pageSize,
+        take: pageSize,
+      });
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException({
+        message: 'Falha ao buscar pedidos.',
+      });
+    }
+
+    if (!personOrders) {
+      throw new NotFoundException({
+        message: 'Nenhum pedido encontrado.',
+      });
+    }
+
+    return personOrders;
   }
 
   async findPageOfPerson<T>(

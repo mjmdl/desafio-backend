@@ -93,7 +93,7 @@ export class ProductsService {
   }
 
   async update(updation: UpdateProductDto): Promise<void> {
-    if (Object.entries(updation.updatedProduct).length === 0) {
+    if (Object.entries(updation.product).length === 0) {
       throw new BadRequestException({
         message: 'É necessário atualizar ao menos um campo.',
       });
@@ -102,7 +102,7 @@ export class ProductsService {
     try {
       await this.productsRepository.update(
         { id: updation.id },
-        updation.updatedProduct,
+        updation.product,
       );
     } catch (error) {
       console.error(error);

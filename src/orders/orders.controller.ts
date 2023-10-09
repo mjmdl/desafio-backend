@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Param, Post } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderView } from './entities/order.view';
@@ -13,11 +13,11 @@ export class OrdersController {
   ) {}
 
   @Post()
-  async post(@Body() creation: CreateOrderDto): Promise<void> {
+  async create(@Body() creation: CreateOrderDto): Promise<void> {
     await this.ordersService.create(creation);
   }
 
-  @Get(['pagina=:page/itens=:items', 'pagina=:page', '/pagina'])
+  @Post(['pagina=:page/itens=:items', 'pagina=:page', '/pagina'])
   async getPageItems(
     @Param('page') page: number,
     @Param('items') items: number,
@@ -33,8 +33,7 @@ export class OrdersController {
       );
       return { orders };
     } else {
-      const orders = await this.ordersService.findPageOfPerson(
-        OrderView,
+      const orders = await this.ordersService.findPersonPage(
         auth.cpf,
         page ?? 0,
         items ?? 0,

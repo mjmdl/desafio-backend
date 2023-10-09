@@ -13,6 +13,8 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { ProductView } from './entities/product.view';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { DeleteProductDto } from './dto/delete-product.dto';
+import { ProductToUserView } from './entities/product-to-user.view';
+import { AuthPersonDto } from 'src/persons/dto/auth-person.dto';
 
 @Controller('produtos')
 export class ProductsController {
@@ -39,6 +41,26 @@ export class ProductsController {
     @Param('page') page: number,
     @Param('items') items: number,
   ): Promise<object> {
+    const products = await this.productsService.findPage(
+      ProductToUserView,
+      page ?? 0,
+      items ?? 0,
+    );
+    return { products };
+  }
+
+  @Post([
+    'pagina=:page/itens=:items/admin',
+    'pagina=:page/admin',
+    'pagina/admin',
+  ])
+  async findPageItemsAdmin(
+    @Param('page') page: number,
+    @Param('items') items: number,
+    @Body() auth: AuthPersonDto,
+  ) {
+    await this.personsService.requireAdmin({ cpf: auth.cpf });
+
     const products = await this.productsService.findPage(
       ProductView,
       page ?? 0,

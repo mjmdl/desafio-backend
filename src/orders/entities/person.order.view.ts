@@ -1,30 +1,26 @@
-import { PersonView } from 'src/persons/entities/person.view';
-import { ProductView } from 'src/products/entities/product.view';
-import { ViewColumn, ViewEntity } from 'typeorm';
-import { OrderProduct } from './order-product.entity';
-import { Product } from 'src/products/entities/product.entity';
-import { Order } from './order.entity';
 import { Person } from 'src/persons/entities/person.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { ProductView } from 'src/products/entities/product.view';
+import { ViewEntity, ViewColumn } from 'typeorm';
+import { OrderProduct } from './order-product.entity';
+import { Order } from './order.entity';
 
 @ViewEntity({
-  name: 'pedido_pessoa_produtos_view',
+  name: 'pedido_produtos_view',
   dependsOn: [OrderProduct, Order, Product, Person],
   expression: `
 		SELECT
 			ped.id AS id,
 			ped.data_cadastro AS data_cadastro,
 			SUM(pedprod.valor_total) AS valor_total,
-			JSON_BUILD_OBJECT(
-				'cpf', cli.cpf,
-				'name', cli.nome
-			) AS cliente,
 			JSON_AGG(JSON_BUILD_OBJECT(
 				'id', prod.id,
 				'name', prod.nome,
 				'value', prod.valor,
 				'quantity', pedprod.quantidade,
 				'totalValue', pedprod.valor_total
-			)) AS produtos
+			)) AS produtos,
+			cli.cpf
 		FROM
 			pedidos_produtos AS pedprod
 		LEFT JOIN
@@ -42,18 +38,18 @@ import { Person } from 'src/persons/entities/person.entity';
 			ped.id ASC
 	`,
 })
-export class OrderView {
+export class PersonOrderView {
   @ViewColumn()
   id: number;
+
+  @ViewColumn()
+  cpf: string;
 
   @ViewColumn({ name: 'data_cadastro' })
   dateCreated: Date;
 
   @ViewColumn({ name: 'valor_total' })
   totalValue: number;
-
-  @ViewColumn({ name: 'cliente' })
-  client: PersonView;
 
   @ViewColumn({ name: 'produtos' })
   products: ProductView[];

@@ -23,7 +23,8 @@ export class PersonsController {
     await this.personsService.create(creation);
   }
 
-  @Get('/cpf=:cpf')
+  // NOTE(mjmdl): Usar POST com Payload para esconder o CPF da URL?
+  @Get('cpf=:cpf')
   async findCpf(@Param('cpf') cpf: string) {
     const person = await this.personsService.find(PersonView, { cpf });
     return { person };
@@ -48,9 +49,9 @@ export class PersonsController {
 
   @Put()
   async update(@Body() updation: UpdatePersonDto): Promise<void> {
-    // Verifica se está atualizando outrem ou permissões admin e se tem permissão para isso.
     const isUpdatingSelf = updation.updatorCpf === updation.targetCpf;
-    if (!isUpdatingSelf || updation.updatedPerson.admin !== null) {
+    const isUpdatingAdmin = updation.updatedPerson.admin !== null;
+    if (!isUpdatingSelf || isUpdatingAdmin) {
       await this.personsService.requireAdmin({ cpf: updation.updatorCpf });
     }
 

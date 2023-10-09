@@ -1,10 +1,9 @@
 import { ViewColumn, ViewEntity } from 'typeorm';
 
 @ViewEntity({
-  name: 'produto_view',
+  name: 'produto_ao_usuario_view',
   expression: `
-		SELECT 
-      id,
+		SELECT
 			nome,
 			valor,
 			favorito,
@@ -12,14 +11,12 @@ import { ViewColumn, ViewEntity } from 'typeorm';
 			data_cadastro
 		FROM
 			produto
-    ORDER BY
-      id
+		ORDER BY
+			favorito DESC,
+			nome ASC
 	`,
 })
-export class ProductView {
-  @ViewColumn()
-  id: number;
-
+export class ProductToUserView {
   @ViewColumn({ name: 'nome' })
   name: string;
 

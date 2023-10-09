@@ -16,7 +16,7 @@ export class Product {
   @PrimaryGeneratedColumn({ type: 'bigint' })
   id: number;
 
-  @Column({ name: 'valor', type: 'decimal', precision: 6, scale: 2 })
+  @Column({ name: 'valor', type: 'decimal', precision: 10, scale: 2 })
   value: number;
 
   @Column({ name: 'nome', length: Product.NAME_MAX })

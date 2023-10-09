@@ -1,18 +1,20 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
-  Param,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { PersonsService } from './persons.service';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { PersonView } from './entities/person.view';
 import { AuthPersonDto } from './dto/auth-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
+import { Person } from './entities/person.entity';
 
 @Controller('pessoas')
 export class PersonsController {
@@ -23,34 +25,35 @@ export class PersonsController {
     await this.personsService.create(creation);
   }
 
-  // NOTE(mjmdl): Usar POST com Payload para esconder o CPF da URL?
-  @Get('cpf=:cpf')
-  async findCpf(@Param('cpf') cpf: string) {
+  @Get()
+  async findCpf(@Query('cpf') cpf: string = '') {
+    if (cpf.length !== Person.CPF_LEN) {
+      throw new BadRequestException({
+        message: `CPF deve ter ${Person.CPF_LEN} dígitos`,
+      });
+    }
+
     const person = await this.personsService.find(PersonView, { cpf });
     return { person };
   }
 
-  @Post(['pagina=:page/itens=:items', 'pagina=:page', '/pagina'])
+  @Post('lista')
   @HttpCode(HttpStatus.OK)
   async findPageItems(
-    @Param('page') page: number,
-    @Param('items') items: number,
+    @Query('pagina') page: number = 0,
+    @Query('itens') items: number = 0,
     @Body() auth: AuthPersonDto,
   ) {
     await this.personsService.requireAdmin({ cpf: auth.cpf });
 
-    const persons = await this.personsService.findPage(
-      PersonView,
-      page ?? 0,
-      items ?? 0,
-    );
+    const persons = await this.personsService.findPage(PersonView, page, items);
     return { persons };
   }
 
   @Put()
   async update(@Body() updation: UpdatePersonDto): Promise<void> {
     const isUpdatingSelf = updation.updatorCpf === updation.targetCpf;
-    const isUpdatingAdmin = updation.updatedPerson.admin !== null;
+    const isUpdatingAdmin = updation.update.admin !== null;
     if (!isUpdatingSelf || isUpdatingAdmin) {
       await this.personsService.requireAdmin({ cpf: updation.updatorCpf });
     }

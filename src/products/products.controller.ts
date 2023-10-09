@@ -5,9 +5,11 @@ import {
   Get,
   HttpCode,
   HttpStatus,
-  Param,
+  InternalServerErrorException,
+  NotFoundException,
   Post,
   Put,
+  Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { PersonsService } from 'src/persons/persons.service';
@@ -32,42 +34,38 @@ export class ProductsController {
     await this.productsService.create(creation);
   }
 
-  @Get('id=:id')
-  async findId(@Param('id') id: number): Promise<object> {
+  @Get()
+  async findId(@Query('id') id: number = 0): Promise<object> {
     const product = await this.productsService.find(ProductView, { id });
     return { product };
   }
 
-  @Get(['pagina=:page/itens=:items', 'pagina=:page', 'pagina'])
+  @Get('lista')
   async findPageItems(
-    @Param('page') page: number,
-    @Param('items') items: number,
+    @Query('pagina') page: number = 0,
+    @Query('itens') items: number = 0,
   ): Promise<object> {
     const products = await this.productsService.findPage(
       ProductToUserView,
-      page ?? 0,
-      items ?? 0,
+      page,
+      items,
     );
     return { products };
   }
 
-  @Post([
-    'pagina=:page/itens=:items/admin',
-    'pagina=:page/admin',
-    'pagina/admin',
-  ])
+  @Post('lista/admin')
   @HttpCode(HttpStatus.OK)
   async findPageItemsAdmin(
-    @Param('page') page: number,
-    @Param('items') items: number,
+    @Query('page') page: number = 0,
+    @Query('items') items: number = 0,
     @Body() auth: AuthPersonDto,
   ) {
     await this.personsService.requireAdmin({ cpf: auth.cpf });
 
     const products = await this.productsService.findPage(
       ProductView,
-      page ?? 0,
-      items ?? 0,
+      page,
+      items,
     );
     return { products };
   }
@@ -85,6 +83,19 @@ export class ProductsController {
       cpf: deletion.deletorCpf,
     });
 
-    await this.productsService.delete(deletion.productId);
+    if (!(await this.productsService.exist({ id: deletion.productId }))) {
+      throw new NotFoundException({
+        message: 'Produto não encontrado.',
+      });
+    }
+
+    try {
+      await this.productsService.delete(deletion.productId);
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException({
+        message: 'Falha ao deletar produto.',
+      });
+    }
   }
 }

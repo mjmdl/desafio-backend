@@ -146,9 +146,7 @@ export class PersonsService {
   }
 
   async update(updation: UpdatePersonDto): Promise<void> {
-    console.log(updation);
-
-    if (Object.entries(updation.updatedPerson).length === 0) {
+    if (Object.entries(updation.update).length === 0) {
       throw new BadRequestException({
         message: 'Ao menos um campo deve ser atualizado.',
       });
@@ -157,7 +155,7 @@ export class PersonsService {
     try {
       await this.personsRepository.update(
         { cpf: updation.targetCpf },
-        updation.updatedPerson,
+        updation.update,
       );
     } catch (error) {
       console.error(error);

@@ -44,7 +44,7 @@ export class OrdersService {
 
   async create(creation: CreateOrderDto): Promise<void> {
     // Verifica quantidade de produtos.
-    if (creation.orderProducts.length === 0) {
+    if (creation.products.length === 0) {
       throw new BadRequestException({
         message: 'Ao menos um produto é necessário para abrir o pedido.',
       });
@@ -68,7 +68,7 @@ export class OrdersService {
     // Cria pedidos de produtos.
     try {
       let newOrderProducts = new Array<OrderProduct>();
-      for (const ordProd of creation.orderProducts) {
+      for (const ordProd of creation.products) {
         const prod = await this.productsService.find(Product, {
           id: ordProd.id,
         });

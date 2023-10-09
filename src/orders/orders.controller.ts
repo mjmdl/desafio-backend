@@ -5,6 +5,7 @@ import {
   HttpStatus,
   Param,
   Post,
+  Query,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto/create-order.dto';
@@ -25,10 +26,10 @@ export class OrdersController {
     await this.ordersService.create(creation);
   }
 
-  @Post(['id=:id'])
+  @Post('id=:id')
   @HttpCode(HttpStatus.OK)
-  async get(
-    @Param('id') id: number,
+  async findId(
+    @Param('id') id: number = 0,
     @Body() auth: AuthPersonDto,
   ): Promise<object> {
     if (auth.admin) {
@@ -45,11 +46,11 @@ export class OrdersController {
     }
   }
 
-  @Post(['pagina=:page/itens=:items', 'pagina=:page', '/pagina'])
+  @Post('lista')
   @HttpCode(HttpStatus.OK)
   async getPageItems(
-    @Param('page') page: number,
-    @Param('items') items: number,
+    @Query('pagina') page: number = 0,
+    @Query('itens') items: number = 0,
     @Body() auth: AuthPersonDto,
   ): Promise<object> {
     if (auth.admin) {

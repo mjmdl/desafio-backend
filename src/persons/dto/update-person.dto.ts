@@ -21,5 +21,5 @@ export class UpdatePersonDto {
   @IsNotEmpty()
   @ValidateNested()
   @Type(() => PutPersonDto)
-  updatedPerson: PutPersonDto;
+  update: PutPersonDto;
 }

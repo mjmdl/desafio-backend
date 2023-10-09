@@ -39,14 +39,25 @@ export class ProductsService {
     }
   }
 
-  async find<T>(entityClass: EntityTarget<T>, where: Partial<T>): Promise<T> {
+  async exist(where: FindOptionsWhere<Product>): Promise<boolean> {
+    try {
+      return await this.productsRepository.exist({ where });
+    } catch (error) {
+      console.error(error);
+      throw new InternalServerErrorException({
+        message: 'Falha ao verificar existência de produto.',
+      });
+    }
+  }
+
+  async find<T>(
+    entityClass: EntityTarget<T>,
+    where: FindOptionsWhere<T>,
+  ): Promise<T> {
     let product: T;
 
     try {
-      product = await this.entityManager.findOneBy(
-        entityClass,
-        where as FindOptionsWhere<T>,
-      );
+      product = await this.entityManager.findOneBy(entityClass, where);
     } catch (error) {
       console.error(error);
       throw new InternalServerErrorException({
@@ -93,7 +104,7 @@ export class ProductsService {
   }
 
   async update(updation: UpdateProductDto): Promise<void> {
-    if (Object.entries(updation.product).length === 0) {
+    if (Object.entries(updation.update).length === 0) {
       throw new BadRequestException({
         message: 'É necessário atualizar ao menos um campo.',
       });
@@ -102,7 +113,7 @@ export class ProductsService {
     try {
       await this.productsRepository.update(
         { id: updation.id },
-        updation.product,
+        updation.update,
       );
     } catch (error) {
       console.error(error);

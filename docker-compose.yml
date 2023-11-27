@@ -18,8 +18,8 @@ services:
     container_name: challenge-pgadmin4
     image: dpage/pgadmin4
     environment:
-      - PGADMIN_DEFAULT_EMAIL=root@admin.com
-      - PGADMIN_DEFAULT_PASSWORD=root
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD}
     restart: always
     ports:
-      - "5055:80"
+      - ${PGADMIN_PORT}:80

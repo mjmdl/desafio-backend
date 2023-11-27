@@ -16,4 +16,9 @@ PG_VOLUME = /database/postgres:/challenge
 
 # TypeORM
 ORM_SYNC = true
+
+# PGAdmin4
+PGADMIN_EMAIL = root@admin.com
+PGADMIN_PASSWORD = root
+PGADMIN_PORT = 3003
 ```

@@ -10,8 +10,8 @@ APP_PORT = 3001
 PG_HOST = localhost
 PG_PORT = 3002
 PG_DATABASE = challenge
-PG_USER = challenger
-PG_PASSWORD = icebucket
+PG_USER = postgres
+PG_PASSWORD = root
 PG_VOLUME = /database/postgres:/challenge
 
 # TypeORM

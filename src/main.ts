@@ -9,6 +9,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   // Configuração do class-validator
+  app.enableCors();
   app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_CONFIG));
   useContainer(app.select(AppModule), { fallbackOnErrors: true });
 

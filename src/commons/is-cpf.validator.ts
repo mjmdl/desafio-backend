@@ -8,6 +8,7 @@ import {
 
 export function isCpf(cpf: string): boolean {
   // return true;
+  if (!cpf) return false;
 
   cpf = cpf.replace(/\D/g, '');
 
